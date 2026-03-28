@@ -49,7 +49,7 @@ public partial class ListaProduto : ContentPage
 		try
 		{
 			string q = e.NewTextValue;
-
+			
             lst_produtos.IsRefreshing = true;
 
             lista.Clear();
@@ -67,15 +67,60 @@ public partial class ListaProduto : ContentPage
 		}
     }
 
+    private async void txt_search_categoria_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        try
+        {
+            string q = e.NewTextValue;
+
+            lst_produtos.IsRefreshing = true;
+
+            lista.Clear();
+
+            List<Produto> tmp = await App.Db.Search(q);
+            tmp.ForEach(i => lista.Add(i));
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Ops", ex.Message, "OK");
+        }
+        finally
+        {
+            lst_produtos.IsRefreshing = false;
+        }
+    }
     private void ToolbarItem_Clicked_1(object sender, EventArgs e)
     {
 		double soma = lista.Sum(i => i.Total);
 		string msg = $"O Total é {soma:C}";
 		DisplayAlert("Total de Produtos", msg, "OK");
+		
+    }
+
+    private async void ToolbarItem_Clicked_2(object sender, EventArgs e)
+    {
+
+        var relatorio = lista
+                    .GroupBy(p => p.Categoria)
+                    .Select(g => new
+                    {
+                        Categoria = g.Key,
+                        TotalGasto = g.Sum(p => p.Total)
+                    })
+                    .ToList();
+
+		string resumo = "";
+
+		foreach (var item in relatorio)
+		{
+			resumo = resumo + item.Categoria + ": R$ " + Convert.ToString(item.TotalGasto) + "\n";
+			
+		}
+        DisplayAlert("Relatório por categoria", resumo, "OK");
 
     }
 
-	private async void MenuItem_Clicked(object sender, EventArgs e)
+    private async void MenuItem_Clicked(object sender, EventArgs e)
 	{
 		try
 		{
